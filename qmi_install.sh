@@ -8,7 +8,7 @@ OLD_DIR="/home/pi/files"
 DIR="/opt/qmi_files"
 service_name=qmi_reconnect
 status="$(systemctl is-active $service_name.service)"
-if ["$status"="active"]; then
+if [ "$status"="active" ]; then
     systemctl stop $service_name.service
     systemctl disable $service_name.service
 fi
