@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='sixfab-diagnostic-tool',
+    name='sixfab-tool',
     version='0.0.2',
     author='Ensar Karabudak',
     author_email='ensarkarabudak@gmail.com',
