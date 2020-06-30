@@ -94,8 +94,6 @@ def sendATcommand(command):
         port =serial.Serial("/dev/ttyUSB2", baudrate=115200, timeout=1)
     except Exception as e:
         logging.error("Serial port connection failed.", exc_info=True)
-        self.ui.textBrowser.append("\nSerial port connection failed.")
-        self.ui.textBrowser.append("Make sure your USB is connection.\n")
         logging.error("sendATcommand function was not executed", exc_info=True)
     port.write((command+'\r\n').encode())
     receive= port.read(100).decode()
@@ -316,6 +314,7 @@ class DesktopTool(QMainWindow):
                 logging.info("Sixfab status: -exists- ")
                 with open("/var/lib/sixfab/sixfab-status","r",encoding = "utf-8") as f:
                     a=f.readlines()
+                    logging.info("Sixfab status: "+ a[0])
                     if(len(a)==0):
                         logging.info("Sixfab status: Empty array")
                     elif(a[0]=='1'):
@@ -477,10 +476,6 @@ class DesktopTool(QMainWindow):
                     self.ui.textBrowser.append(CREG+"\n")
                     time.sleep(0.3)
                     
-                    CREG = sendATcommand("AT+CREG?")
-                    self.ui.textBrowser.append(CREG+"\n")
-                    time.sleep(0.3)
-                    
                     CEREG = sendATcommand("AT+CEREG?")
                     self.ui.textBrowser.append(CEREG+"\n")
                     time.sleep(0.3)
@@ -551,10 +546,6 @@ class DesktopTool(QMainWindow):
             self.ui.textBrowser.append("\n-- Raspberry Pi Model Infomation --")
             model = os.popen('cat /proc/device-tree/model').read()
             self.ui.textBrowser.append(model)
-            
-            """
-            self.ui.textBrowser.setText('\n')
-            """
         else:
             QMessageBox.information(self, 'Message', "Please input a Value")
     
@@ -647,30 +638,37 @@ class DesktopTool(QMainWindow):
             f.writelines(["1"])
 
     def onKernelButtonClick(self):
-        QMessageBox.information(self, 'Info', "Installing, this may take long. Please do not reboot/turn off the power")
-        self.calc = External()
-        self.calc.countChanged.connect(self.onCountChanged2)
-        self.calc.start()
-        value = os.popen('ls /usr/src').read()
-        version=value[14:20]
-        r = requests.get('https://api.github.com/repos/Hexxeh/rpi-firmware/commits')
-        r.json()
-        a=r.json()
-
-        for x in range(len(a)):
-            message=a[x]['commit']['message']
-            decision = message.find(version)
-            if(decision != -1):
-                print(a[x]['sha'])
-                logging.info("SHA: "+ a[x]['sha'])
-                text="sudo SKIP_WARNING=1 rpi-update " + a[x]['sha']
-                os.system(text)
-                logging.info("Install kernel successful.")
-                break
-        with open("/var/lib/sixfab/sixfab-status","w",encoding = "utf-8") as f:
-            f.writelines(["2"])
-        
-        os.system('sudo reboot')
+        if(internet_check()):
+            self.calc = External()
+            self.calc.countChanged.connect(self.onCountChanged2)
+            self.calc.start()
+            try:
+                QMessageBox.information(self, 'Info', "Installing, this may take long. Please do not reboot/turn off the power")
+                value = os.popen('ls /usr/src').read()
+                version=value[14:20]
+                r = requests.get('https://api.github.com/repos/Hexxeh/rpi-firmware/commits')
+                r.json()
+                a=r.json()
+                for x in range(len(a)):
+                    message=a[x]['commit']['message']
+                    decision = message.find(version)
+                    if(decision != -1):
+                        print(a[x]['sha'])
+                        logging.info("SHA: "+ a[x]['sha'])
+                        text="sudo SKIP_WARNING=1 rpi-update " + a[x]['sha']
+                        os.system(text + ">> ./setup-and-diagnostic-tool.log 2>&1")
+                        logging.info("Install kernel successful.")
+                        break
+                with open("/var/lib/sixfab/sixfab-status","w",encoding = "utf-8") as f:
+                    f.writelines(["2"])
+                time.sleep(2)
+                os.system('sudo reboot')
+            except Exception as e:
+                logging.critical(e, exc_info=True)
+        else:
+            QMessageBox.information(self, 'Message', "No Internet connection")
+            print("No Internet connection")
+            logging.info("No Internet connection")
         
 
     def onScriptButtonClick(self):
@@ -685,17 +683,19 @@ class DesktopTool(QMainWindow):
             try:
                 os.system('wget https://raw.githubusercontent.com/sixfab/setup-and-diagnostic-tool/master/qmi_install.sh')
                 os.system('sudo chmod a+rwx qmi_install.sh')
-                os.system('sudo ./qmi_install.sh')
+                os.system('sudo ./qmi_install.sh' + "> ./setup-and-diagnostic-tool.log 2>&1")
             except Exception as e:
-                logging.error("QMI download failed.", exc_info=True)
+                logging.error("QMI install failed.", exc_info=True)
             logging.info("sudo ./qmi_install.sh ... done")
+            with open("/var/lib/sixfab/sixfab-status","w",encoding = "utf-8") as f:
+                f.writelines(["3"])
+            time.sleep(2)
             os.system('sudo reboot')
         else:
             QMessageBox.information(self, 'Message', "No Internet connection")
             print("No Internet connection")
             logging.info("No Internet connection")
-        with open("/var/lib/sixfab/sixfab-status","w",encoding = "utf-8") as f:
-            f.writelines(["3"])
+        
 
     def onServiceButtonClick(self):
         apn =self.ui.qmi_apn.text()
@@ -703,18 +703,21 @@ class DesktopTool(QMainWindow):
         if(apn==''):
             QMessageBox.information(self, 'Message', "Please input a Value")
         else:
-            logging.info("QMI service activation..")
+            logging.info("QMI service activation...")
             apn =self.ui.qmi_apn.text()
-            label="sudo /opt/qmi_files/quectel-CM/quectel-CM -s " + apn + " &"
+            label="sudo /opt/qmi_files/quectel-CM/quectel-CM -s " + apn + "&"
             try:
-                os.system(label)
+                if(os.path.exists("/opt/qmi_files/quectel-CM")):
+                    os.system(label + ">> ./setup-and-diagnostic-tool.log 2>&1")
+                    self.ui.qmi_status_label.setText("QMI service: Active")
+                    self.ui.qmi_status_label.setVisible(True)
+                else:
+                    self.ui.qmi_status_label.setText("QMI service could not be activated.")
+                    self.ui.qmi_status_label.setVisible(True)
             except Exception as e:
                 logging.error("os.system(" + label + ") failed.", exc_info=True)
-            
-            self.ui.qmi_status_label.setText("QMI service is active")
-            self.ui.qmi_status_label.setVisible(True)
-        
-        
+
+
     def onTestButtonClick(self):
         ifconfig = os.popen('ifconfig').readlines()
         wwanControl=True
@@ -756,7 +759,7 @@ class DesktopTool(QMainWindow):
                     data.insert(2, "carrierapn=\""+apn2+"\"\n")
                     f.seek(0)
                     f.writelines(data)
-                os.system('sudo ./install_auto_connect.sh')
+                os.system("sudo ./install_auto_connect.sh" + ">> ./setup-and-diagnostic-tool.log 2>&1")
                 active = os.popen("systemctl is-active qmi_reconnect.service").read()
                 self.ui.qmi_auto_label.setVisible(True)
                 self.ui.qmi_auto_label.setText("QMI Reconnect Service: "+active)
@@ -794,11 +797,11 @@ class DesktopTool(QMainWindow):
 
     def onPPPInstallButton(self):
         #'Base Shield', 'CellularIoT Shield','CellularIoT HAT', 'Tracker HAT', 'Base HAT'
-        product_id = ""
         if(os.path.exists("/proc/device-tree/hat")):
             f=open("/proc/device-tree/hat/product_id", "r")
             product_id = f.read().splitlines()
             product_id = product_id[0].rsplit('\x00')
+            logging.info("Produc ID: " + product_id[0])
             f.close()
         else:
             print("/proc/device-tree/hat not found. If you have not connected your HAT to Raspberry Pi, connect and reboot.")
@@ -807,14 +810,16 @@ class DesktopTool(QMainWindow):
         port = str(self.ui.ppp_port_comboBox.currentText())
         autoConnect = str(self.ui.ppp_auto_comboBox.currentText())
         shield=str(self.ui.shield_hat_comboBox.currentText())
-        logging.info("Produc ID: " + product_id[0])
-        if(shield==""):
-            if(product_id[0] == '0x0003'):
-                shield = "Base HAT"
-            elif(product_id[0] == '0x0001'):
-                shield = "CellularIoT HAT"
-            elif(product_id[0] == '0x0004'):
-                shield = "Tracker HAT"
+        try:
+            if(shield==""):
+                if(product_id[0] == '0x0003'):
+                    shield = "Base HAT"
+                elif(product_id[0] == '0x0001'):
+                    shield = "CellularIoT HAT"
+                elif(product_id[0] == '0x0004'):
+                    shield = "Tracker HAT"
+        except Exception as e:
+            logging.critical(e, exc_info=True)
         if(apn3=="" or port=="" or autoConnect==""):
             QMessageBox.information(self, 'Message', "Please input a Value")
         else:
@@ -842,7 +847,7 @@ class DesktopTool(QMainWindow):
                 print(install)
                 logging.info("PPP install command: " + install)
                 try:
-                    os.system(install)
+                    os.system(install + ">> ./setup-and-diagnostic-tool.log 2>&1")
                 except Exception as e:
                     logging.error("PPP install failed.", exc_info=True)
             else:
@@ -874,7 +879,7 @@ class DesktopTool(QMainWindow):
     def onPPPTestButton(self):
         self.ui.ppp_test_label.setVisible(True)
         try:
-            os.system('sudo pon')
+            os.system("sudo pon" + ">> ./setup-and-diagnostic-tool.log 2>&1")
         except Exception as e:
             logging.error("sudo pon : failed.", exc_info=True)
             print("sudo pon : failed")

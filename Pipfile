@@ -15,5 +15,6 @@ pyqt-distutils = "*"
 serial = "*"
 rpi-gpio = "*"
 
+
 [requires]
 python_version = "3.7"
