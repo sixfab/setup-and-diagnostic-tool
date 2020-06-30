@@ -65,11 +65,7 @@ echo "${YELLOW}What is your device communication PORT? (ttyS0/ttyUSB3/etc.)${SET
 
 mkdir -p /etc/chatscripts
 
-if [ $1 -eq 3 ] || [ $1 -eq 4 ]; then
-  sed -i "s/#EXTRA/$EXTRA/" chat-connect
-else
-  sed -i "/#EXTRA/d" chat-connect
-fi
+sed -i "/#EXTRA/d" chat-connect
 
 
 mv chat-connect /etc/chatscripts/
