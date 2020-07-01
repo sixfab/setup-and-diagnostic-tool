@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='sixfab-tool',
-    version='0.0.2',
+    version='0.0.3',
     author='Ensar Karabudak',
     author_email='ensarkarabudak@gmail.com',
     description='Sixfab Diagnostic Tool',
@@ -14,8 +14,7 @@ setup(
         'pyinquirer',
         'tqdm',
         'yaspin',
-        'serial',
-        'rpi-gpio',
+        'RPi.GPIO',
         'request',
         'pathlib',
         'pyserial'

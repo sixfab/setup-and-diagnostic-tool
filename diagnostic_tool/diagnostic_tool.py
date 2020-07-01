@@ -10,7 +10,6 @@ from pprint import pprint
 from yaspin import yaspin
 from tqdm import trange
 from tqdm import tqdm
-#from serial import Serial
 from PyInquirer import style_from_dict, Token, prompt, Separator
 from examples import custom_style_2
 
@@ -150,7 +149,7 @@ def send_command():
                 time.sleep(0.5)
                 
                 QSPN = sendATcommand("AT+QSPN")
-                sp.write(style.YELLOW + "AT+QSPN:" + +"\n")
+                sp.write(style.YELLOW + "AT+QSPN:" + QSPN + "\n")
                 time.sleep(0.5)
                 
                 CGREG = sendATcommand("AT+CGREG?")
