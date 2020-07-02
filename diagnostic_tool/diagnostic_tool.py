@@ -96,6 +96,7 @@ def send_command():
                 time.sleep(0.5)
                 
                 port.write(("AT+CMEE=2"+'\r\n').encode())
+                
                 ATI = sendATcommand("ATI")
                 sp.write(style.YELLOW + "\n" + ATI + "\n")
                 time.sleep(0.5)
@@ -127,6 +128,9 @@ def send_command():
                 CPIN = sendATcommand("AT+CPIN?")
                 sp.write(style.YELLOW + "AT+CPIN?:" + CPIN+"\n")
                 time.sleep(0.5)
+                
+                QCCID = sendATcommand("AT+QCCID")
+                sp.write(style.YELLOW + "AT+QCCID:" + QCCID +"\n")
                 
                 CREG = sendATcommand("AT+CREG?")
                 sp.write(style.YELLOW + "AT+CREG?:" + CREG+"\n")
