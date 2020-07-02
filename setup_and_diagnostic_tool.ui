@@ -428,8 +428,8 @@
     <widget class="QLabel" name="qmi_test_label">
      <property name="geometry">
       <rect>
-       <x>390</x>
-       <y>202</y>
+       <x>392</x>
+       <y>203</y>
        <width>361</width>
        <height>21</height>
       </rect>

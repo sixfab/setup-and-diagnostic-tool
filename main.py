@@ -472,6 +472,10 @@ class DesktopTool(QMainWindow):
                     self.ui.textBrowser.append(CPIN+"\n")
                     time.sleep(0.3)
                     
+                    QCCID = sendATcommand("AT+QCCID")
+                    self.ui.textBrowser.append("AT+QCCID" + QCCID +"\n")
+                    time.sleep(0.3)
+                    
                     CREG = sendATcommand("AT+CREG?")
                     self.ui.textBrowser.append(CREG+"\n")
                     time.sleep(0.3)
@@ -644,6 +648,7 @@ class DesktopTool(QMainWindow):
             self.calc.start()
             try:
                 QMessageBox.information(self, 'Info', "Installing, this may take long. Please do not reboot/turn off the power")
+                os.system('sudo apt-get install raspberrypi-kernel-headers' + '> ./setup-and-diagnostic-tool.log 2>&1')
                 value = os.popen('ls /usr/src').read()
                 version=value[14:20]
                 r = requests.get('https://api.github.com/repos/Hexxeh/rpi-firmware/commits')
@@ -673,6 +678,8 @@ class DesktopTool(QMainWindow):
 
     def onScriptButtonClick(self):
         if(internet_check()):
+            QMessageBox.information(self, 'Info', "Installing, this may take long. Please do not reboot/turn off the power")
+            os.system('sudo apt-get install raspberrypi-kernel-headers' + '> ./setup-and-diagnostic-tool.log 2>&1')
             if(os.path.exists("./qmi_install.sh")):
                 os.system('rm qmi_install.sh')
                 logging.info("Downloading new qmi_install.sh")
