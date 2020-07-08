@@ -78,7 +78,7 @@ def sendPing(text):
             connect=False
             break
     if(connect==False):
-        return "Interface found but internet connection failed."
+        return "Internet connection failed." # "Interface found"
     else:
         return "Connection established."
 
@@ -154,7 +154,7 @@ class DesktopTool(QMainWindow):
         self.ui.qmi_groupBox.setVisible(False)
         self.ui.ppp_groupBox.setVisible(False)
         
-        self.ui.route_frame.setVisible(False)
+        #self.ui.route_frame.setVisible(False)
         
     ###                         ### 
     ###                         ### 
@@ -260,15 +260,8 @@ class DesktopTool(QMainWindow):
             self.ui.addCredential.clicked.connect(self.onAddCredentialButton)
         except Exception as e:
             logging.error("onAddCredentialButton function was not executed", exc_info=True)
-        
-    #Route Frame
-        #route_label
-        try:
-            self.ui.error_solve.clicked.connect(self.onSolveButton)
-        except Exception as e:
-            logging.error("onSolveButton function was not executed", exc_info=True)
-        self.ui.done_label.setVisible(False) # Outside the frame
-        
+
+
     ###                         ### 
     ###                         ### 
     ###   DIAGNOSTIC  DESIGN    ### 
@@ -424,7 +417,12 @@ class DesktopTool(QMainWindow):
         hat_combo = str(self.ui.dig_hat_shield_combobox.currentText())
         hat_label = self.ui.dig_detection_label.text()
         if(hat_combo!="" or hat_label!=""):
+            self.ui.textBrowser.setText('')
+            sim_message=""
+            antenna_message=""
             if(os.path.exists("/dev/ttyUSB2")):
+                self.setCursor(Qt.WaitCursor)
+                QMessageBox.information(self, 'Message', "Please wait, sending AT commands...")
                 port = serial.Serial("/dev/ttyUSB2", baudrate=115200, timeout=1)
                 connection=sendATcommand("AT")
                 #print(connection)
@@ -436,71 +434,96 @@ class DesktopTool(QMainWindow):
                     logging.info("Connected to the module.")
                     print("Sending commands...")
                     logging.info("Sending commands...")
+                    
                     time.sleep(0.3)
                     
                     port.write(("AT+CMEE=2"+'\r\n').encode())
                     
                     time.sleep(0.3)
-                    ATI = sendATcommand("ATI")
-                    self.ui.textBrowser.append("\n"+ATI+"\n")
+                    ATI = sendATcommand("\nATI")
+                    self.ui.textBrowser.append("ATI")
+                    self.ui.textBrowser.append(ATI+"\n")
                     time.sleep(0.3)
                     
                     ATV1 = sendATcommand("ATV1")
-                    self.ui.textBrowser.append("ATV1:"+ATV1+"\n")
+                    self.ui.textBrowser.append("ATV1")
+                    self.ui.textBrowser.append(ATV1+"\n")
                     time.sleep(0.3)
                     
                     ATE1 = sendATcommand("ATE1")
-                    self.ui.textBrowser.append("ATE1:"+ATE1+"\n")
+                    self.ui.textBrowser.append("ATE1")
+                    self.ui.textBrowser.append(ATE1+"\n")
                     time.sleep(0.3)
                     
                     IPR = sendATcommand("AT+IPR?")
+                    self.ui.textBrowser.append("AT+IPR?")
                     self.ui.textBrowser.append(IPR+"\n")
                     
                     COPS = sendATcommand("AT+COPS?")
+                    self.ui.textBrowser.append("AT+COPS?")
                     self.ui.textBrowser.append(COPS+"\n")
                     time.sleep(0.3)
                     
                     GSN = sendATcommand("AT+GSN")
+                    self.ui.textBrowser.append("AT+GSN")
                     self.ui.textBrowser.append(GSN+"\n")
                     time.sleep(0.3)
                     
                     QURCCFG = sendATcommand("AT+QURCCFG=\"urcport\",\"usbat\"")
-                    self.ui.textBrowser.append("AT+QURCCFG=\"urcport\",\"usbat\":"+QURCCFG+"\n")
+                    self.ui.textBrowser.append("AT+QURCCFG=\"urcport\",\"usbat\"")
+                    self.ui.textBrowser.append(QURCCFG+"\n")
                     time.sleep(0.3)
                     
                     CPIN = sendATcommand("AT+CPIN?")
+                    self.ui.textBrowser.append("AT+CPIN?")
                     self.ui.textBrowser.append(CPIN+"\n")
                     time.sleep(0.3)
+                    if(CPIN!="" and CPIN.lower().find('error') > -1):
+                        sim_message="SIM card not inserted."
+                    else:
+                        sim_message="SIM card is inserted."
                     
                     QCCID = sendATcommand("AT+QCCID")
-                    self.ui.textBrowser.append("AT+QCCID" + QCCID +"\n")
+                    self.ui.textBrowser.append("AT+QCCID")
+                    self.ui.textBrowser.append(QCCID +"\n")
                     time.sleep(0.3)
                     
                     CREG = sendATcommand("AT+CREG?")
+                    self.ui.textBrowser.append("AT+CREG?")
                     self.ui.textBrowser.append(CREG+"\n")
                     time.sleep(0.3)
                     
                     CEREG = sendATcommand("AT+CEREG?")
+                    self.ui.textBrowser.append("AT+CEREG?")
                     self.ui.textBrowser.append(CEREG+"\n")
                     time.sleep(0.3)
                     
                     CSQ = sendATcommand("AT+CSQ")
+                    self.ui.textBrowser.append("AT+CSQ")
                     self.ui.textBrowser.append(CSQ+"\n")
                     time.sleep(0.3)
                     
                     QCSQ = sendATcommand("AT+QCSQ")
+                    self.ui.textBrowser.append("AT+QCSQ")
                     self.ui.textBrowser.append(QCSQ+"\n")
                     time.sleep(0.3)
+                    if(CSQ!="" and CSQ.lower().find('99,99') > -1):
+                        antenna_message="Not known or not detectable."
+                    else:
+                        antenna_message="The antenna detected."
                     
                     QNWINFO = sendATcommand("AT+QNWINFO")
+                    self.ui.textBrowser.append("AT+QNWINFO")
                     self.ui.textBrowser.append(QNWINFO+"\n")
                     time.sleep(0.3)
                     
                     QSPN = sendATcommand("AT+QSPN")
+                    self.ui.textBrowser.append("AT+QSPN")
                     self.ui.textBrowser.append(QSPN+"\n")
                     time.sleep(0.3)
                     
                     CGREG = sendATcommand("AT+CGREG?")
+                    self.ui.textBrowser.append("AT+CGREG?")
                     self.ui.textBrowser.append(CGREG+"\n")
                     time.sleep(0.3)
                 else:
@@ -509,6 +532,7 @@ class DesktopTool(QMainWindow):
                     self.ui.textBrowser.append("\nSerial port connection failed.")
                     self.ui.textBrowser.append("AT commands could not be sent.")
                     print("AT commands could not be sent.")
+                self.setCursor(Qt.ArrowCursor)
             else:
                 self.ui.textBrowser.append("AT commands could not be sent. Make sure your USB is connection.")
                 
@@ -523,7 +547,7 @@ class DesktopTool(QMainWindow):
             self.ui.textBrowser.append(uname)
             
             
-            self.ui.textBrowser.append("\n-- USB Port --")
+            self.ui.textBrowser.append("\n-- USB Cable Status --")
             usb = os.popen('ls /dev/ttyUSB*').read()
             if(usb==""):
                 self.ui.textBrowser.append("USB Port Not Recognized")
@@ -531,6 +555,14 @@ class DesktopTool(QMainWindow):
             else:
                 self.ui.textBrowser.append(usb)
             
+            if(antenna_message!=""):
+                self.ui.textBrowser.append("\n-- Antenna Status --")
+                self.ui.textBrowser.append(antenna_message)
+            
+            if(sim_message!=""):
+                self.ui.textBrowser.append("\n-- SIM Card Status --")
+                self.ui.textBrowser.append(sim_message)
+
             
             self.ui.textBrowser.append("\n-- QMI & PPP Connection Information --")
             if(os.path.exists("/etc/ppp/peers/provider")):
@@ -552,7 +584,7 @@ class DesktopTool(QMainWindow):
             self.ui.textBrowser.append(model)
         else:
             QMessageBox.information(self, 'Message', "Please input a Value")
-    
+        
     
     ##########                 ##########
     #########                   #########
@@ -571,6 +603,7 @@ class DesktopTool(QMainWindow):
         self.ui.diagnostic.setVisible(False)
         
     def onMain(self):
+        self.setCursor(Qt.ArrowCursor)
         self.ui.home.setVisible(True)
         self.ui.installer.setVisible(False)
         self.ui.diagnostic.setVisible(False)
@@ -743,8 +776,8 @@ class DesktopTool(QMainWindow):
                 wwanControl=False
 
         if(wwanControl==False):
-            logging.info("Interface not found. Make sure USB cable is connected.")
-            self.ui.qmi_test_label.setText("Interface not found. Make sure USB cable is connected.")
+            logging.info("QMI interface not found.") 
+            self.ui.qmi_test_label.setText("QMI interface not found.") # "Make sure USB cable is connected.
     
     def onAutoButtonClick(self):
         apn2 =self.ui.qmi_apn.text()
@@ -766,11 +799,14 @@ class DesktopTool(QMainWindow):
                     data.insert(2, "carrierapn=\""+apn2+"\"\n")
                     f.seek(0)
                     f.writelines(data)
-                os.system("sudo ./install_auto_connect.sh" + ">> ./setup-and-diagnostic-tool.log 2>&1")
-                active = os.popen("systemctl is-active qmi_reconnect.service").read()
-                self.ui.qmi_auto_label.setVisible(True)
-                self.ui.qmi_auto_label.setText("QMI Reconnect Service: "+active)
-                logging.info("QMI Reconnect Service: " + active)
+                try:
+                    os.system("sudo ./install_auto_connect.sh" + ">> ./setup-and-diagnostic-tool.log 2>&1")
+                    active = os.popen("systemctl is-active qmi_reconnect.service").read()
+                    self.ui.qmi_auto_label.setVisible(True)
+                    self.ui.qmi_auto_label.setText("QMI reconnect Service: "+active)
+                    logging.info("QMI Reconnect Service: " + active)
+                except Exception as e:
+                    logging.critical(e, exc_info=True)
             else:
                 QMessageBox.information(self, 'Message', "No Internet connection")
                 print("No Internet connection")
@@ -821,16 +857,18 @@ class DesktopTool(QMainWindow):
             if(shield==""):
                 if(product_id[0] == '0x0003'):
                     shield = "Base HAT"
-                elif(product_id[0] == '0x0001'):
+                elif(product_id[0] == '0x0001' or product_id[0] == '0x0005'):
                     shield = "CellularIoT HAT"
                 elif(product_id[0] == '0x0004'):
                     shield = "Tracker HAT"
+                else:
+                    shield = "Base HAT"
         except Exception as e:
             logging.critical(e, exc_info=True)
         if(apn3=="" or port=="" or autoConnect==""):
             QMessageBox.information(self, 'Message', "Please input a Value")
         else:
-            logging.info("Shield: "+ shield)
+            logging.info("Shield/HAT: "+ shield)
             logging.info("APN: "+ apn3)
             logging.info("Port: "+ port)
             logging.info("AutoConnect: "+ autoConnect)
@@ -847,12 +885,12 @@ class DesktopTool(QMainWindow):
                 try:
                     os.system('wget https://raw.githubusercontent.com/sixfab/setup-and-diagnostic-tool/master/ppp_install.sh')
                     os.system('sudo chmod +x ppp_install.sh')
+                    install='sudo ./ppp_install.sh '+ hat +' '+ apn3 + ' '+ ' '+port + ' ' +autoConnect
+                    print(install)
                 except Exception as e:
                     logging.error("PPP Download failed.", exc_info=True)
+                    logging.info("PPP install command: " + install)
                 #QMessageBox.information(self, 'Info', "Installing, this may take long. Please do not reboot/turn off the power")
-                install='sudo ./ppp_install.sh '+ hat +' '+ apn3 + ' '+ ' '+port + ' ' +autoConnect
-                print(install)
-                logging.info("PPP install command: " + install)
                 try:
                     os.system(install + ">> ./setup-and-diagnostic-tool.log 2>&1")
                 except Exception as e:
@@ -907,18 +945,8 @@ class DesktopTool(QMainWindow):
                 pppControl=False
 
         if(pppControl==False):
-            self.ui.ppp_test_label.setText("Interface not found. Make sure USB cable is connected.")
-            logging.info("Interface not found. Make sure USB cable is connected.")
-        ppp_test_label =  self.ui.ppp_test_label.text()
-        if(ppp_test_label!="Connection established."):
-            self.ui.route_frame.setVisible(True)
-            logging.info("Rote frame visible: True")
-            
-
-    def onSolveButton(self):
-        os.system('sudo route del default')
-        os.system('sudo route add default ppp0')
-        self.ui.done_label.setVisible(True)
+            self.ui.ppp_test_label.setText("Interface not found.") # Make sure USB cable is connected.
+            logging.info("Interface not found.")
 
     def password_changed(self):
         if self.ui.show_checkBox.isChecked():
@@ -938,8 +966,6 @@ class DesktopTool(QMainWindow):
             self.ui.pppInstallButton.setGeometry(260,280,186,31)
             self.ui.pppTestButton.setGeometry(150,325,186,31)
             self.ui.ppp_test_label.setGeometry(360,325,211,41)
-            self.ui.route_frame.setGeometry(50,365,681,51)
-            self.ui.done_label.setGeometry(670,375,67,21)
         else:
             self.ui.credential_frame.setVisible(False)
             self.ui.autoConnect_label.setGeometry(100, 155, 381, 31)
@@ -951,8 +977,7 @@ class DesktopTool(QMainWindow):
             self.ui.pppInstallButton.setGeometry(240,200,186,31)
             self.ui.pppTestButton.setGeometry(130,250,186,31)
             self.ui.ppp_test_label.setGeometry(330,255,211,41)
-            self.ui.route_frame.setGeometry(50,300,681,51)
-            self.ui.done_label.setGeometry(680,280,67,21)
+
 
 class External(QThread):
     countChanged = pyqtSignal(int)
