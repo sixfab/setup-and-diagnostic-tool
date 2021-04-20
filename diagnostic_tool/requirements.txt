@@ -3,6 +3,6 @@ prompt_toolkit==1.0.14
 tqdm==4.46.1
 PyInquirer==1.0.3
 yaspin==0.17.0
-Pygments==2.6.1
+Pygments==2.7.4
 future==0.18.2
 six==1.15.0
